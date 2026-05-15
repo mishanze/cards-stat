@@ -6,107 +6,99 @@
     <title>Poker Stats PRO</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --bg: #0f0f0f; --card-bg: #252525; --accent: #248bde; --text: #ffffff; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-               background: var(--bg); color: var(--text); margin: 0; padding: 15px; user-select: none; }
+        :root { --bg: #0b0e11; --card-bg: #1e2329; --accent: #f0b90b; --text: #eaecef; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; user-select: none; }
+        .stats-box { background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: center; border: 1px solid #333; }
+        .win-pct { font-size: 38px; font-weight: bold; color: #02c076; }
+        .hand-name { font-size: 14px; color: var(--accent); text-transform: uppercase; margin-top: 5px; }
         
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .stats-box { background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
-        .win-pct { font-size: 32px; font-weight: bold; color: #4cd964; }
+        .section-label { font-size: 10px; color: #848e9c; margin-bottom: 5px; text-align: left; padding-left: 5px; }
+        .board-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        .row { display: flex; gap: 6px; justify-content: center; }
         
-        .setup-row { display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
-        .player-btn { background: #333; border: none; color: white; padding: 8px 15px; border-radius: 8px; min-width: 45px; }
-        .player-btn.active { background: var(--accent); }
-
-        .board-grid { display: grid; grid-template-columns: repeat(2, 1fr) 5px repeat(3, 1fr); gap: 8px; margin-bottom: 20px; align-items: center; }
-        .card-slot { background: var(--card-bg); border: 2px dashed #444; height: 70px; border-radius: 8px; 
-                     display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; }
-        .card-slot.active { border-color: var(--accent); background: #1a2530; }
-        .card-slot.filled { border-style: solid; border-color: #555; background: #fff; color: #000; }
-        .divider { width: 2px; height: 40px; background: #333; }
-
-        .selector { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: #1a1a1a; padding: 10px; border-radius: 12px; }
-        .sel-btn { background: #333; border: none; color: white; padding: 12px 5px; border-radius: 6px; font-size: 16px; }
-        .suit-s { color: #fff; } .suit-h { color: #ff3b30; } .suit-d { color: #34aadc; } .suit-c { color: #4cd964; }
+        .card-slot { background: #2b3139; border: 1px solid #474d57; height: 65px; width: 45px; border-radius: 6px; 
+                     display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; }
+        .card-slot.active { border: 2px solid var(--accent); background: #363d48; }
+        .card-slot.filled { background: #fff; color: #000; border: none; }
         
-        .controls { margin-top: 20px; display: flex; gap: 10px; }
-        .reset-btn { flex: 1; background: #ff3b30; border: none; color: white; padding: 12px; border-radius: 8px; font-weight: bold; }
+        .selector-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 10px; }
+        .sel-btn { background: #2b3139; border: none; color: #fff; padding: 10px 0; border-radius: 4px; font-size: 14px; font-weight: bold; }
+        .suit-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .suit-btn { padding: 15px; font-size: 20px; border-radius: 8px; border: none; color: #fff; background: #2b3139; }
+        
+        .footer-btns { display: flex; gap: 10px; margin-top: 15px; }
+        .btn { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; }
+        .reset { background: #333; color: #fff; }
+        .players { background: var(--accent); color: #000; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <span>Оппонентов:</span>
-    <div class="setup-row" id="player-selector"></div>
-</div>
-
 <div class="stats-box">
-    <div style="font-size: 12px; color: #888;">ШАНС НА ПОБЕДУ</div>
     <div id="win-output" class="win-pct">0%</div>
-    <div id="status-text" style="font-size: 11px; color: #555; margin-top: 5px;">Введите свои карты</div>
+    <div id="hand-output" class="hand-name">Ожидание карт...</div>
 </div>
 
-<div class="board-grid">
-    <div class="card-slot active" id="slot-0" onclick="setSlot(0)">?</div>
-    <div class="card-slot" id="slot-1" onclick="setSlot(1)">?</div>
-    <div class="divider"></div>
-    <div class="card-slot" id="slot-2" onclick="setSlot(2)">?</div>
-    <div class="card-slot" id="slot-3" onclick="setSlot(3)">?</div>
-    <div class="card-slot" id="slot-4" onclick="setSlot(4)">?</div>
+<div class="board-container">
+    <div class="section-label">ВАШИ КАРТЫ</div>
+    <div class="row">
+        <div class="card-slot active" id="slot-0" onclick="setSlot(0)">?</div>
+        <div class="card-slot" id="slot-1" onclick="setSlot(1)">?</div>
+    </div>
+    
+    <div class="section-label">СТОЛ (ФЛОП, ТЕРН, РИВЕР)</div>
+    <div class="row">
+        <div class="card-slot" id="slot-2" onclick="setSlot(2)">?</div>
+        <div class="card-slot" id="slot-3" onclick="setSlot(3)">?</div>
+        <div class="card-slot" id="slot-4" onclick="setSlot(4)">?</div>
+        <div style="width: 10px;"></div>
+        <div class="card-slot" id="slot-5" onclick="setSlot(5)">?</div>
+        <div class="card-slot" id="slot-6" onclick="setSlot(6)">?</div>
+    </div>
 </div>
 
-<div class="selector" id="val-selector"></div>
-<div class="selector" id="suit-selector" style="margin-top: 10px; grid-template-columns: repeat(4, 1fr);">
-    <button class="sel-btn suit-s" onclick="selectSuit('♠')">♠</button>
-    <button class="sel-btn suit-h" onclick="selectSuit('♥')">♥</button>
-    <button class="sel-btn suit-d" onclick="selectSuit('♦')">♦</button>
-    <button class="sel-btn suit-c" onclick="selectSuit('♣')">♣</button>
+<div class="selector-grid" id="val-selector"></div>
+<div class="suit-grid">
+    <button class="suit-btn" style="color:#fff" onclick="selectSuit('♠')">♠</button>
+    <button class="suit-btn" style="color:#f6465d" onclick="selectSuit('♥')">♥</button>
+    <button class="suit-btn" style="color:#34aadc" onclick="selectSuit('♦')">♦</button>
+    <button class="suit-btn" style="color:#02c076" onclick="selectSuit('♣')">♣</button>
 </div>
 
-<div class="controls">
-    <button class="reset-btn" onclick="resetBoard()">СБРОС</button>
+<div class="footer-btns">
+    <button class="btn players" id="p-count" onclick="togglePlayers()">Игроков: 2</button>
+    <button class="btn reset" onclick="resetBoard()">СБРОС</button>
 </div>
 
 <script>
     let players = 2;
     let currentSlot = 0;
-    let hand = [null, null, null, null, null]; // 2 Hero + 3 Flop
+    let hand = Array(7).fill(null);
     const values = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
     let tempValue = null;
-
-    // Инициализация кнопок
-    const pSel = document.getElementById('player-selector');
-    for(let i=2; i<=8; i++) {
-        pSel.innerHTML += `<button class="player-btn ${i==2?'active':''}" onclick="setPlayers(${i}, this)">${i}</button>`;
-    }
 
     const vSel = document.getElementById('val-selector');
     values.forEach(v => {
         vSel.innerHTML += `<button class="sel-btn" onclick="selectValue('${v}')">${v}</button>`;
     });
 
-    function setPlayers(n, btn) {
-        players = n;
-        document.querySelectorAll('.player-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+    function togglePlayers() {
+        players = players >= 8 ? 2 : players + 1;
+        document.getElementById('p-count').innerText = `Игроков: ${players}`;
         calculate();
     }
 
-    function setSlot(i) {
-        currentSlot = i;
-        updateUI();
-    }
+    function setSlot(i) { currentSlot = i; updateUI(); }
 
-    function selectValue(v) {
-        tempValue = v;
-        document.getElementById('status-text').innerText = "Выберите масть для " + v;
-    }
+    function selectValue(v) { tempValue = v; }
 
     function selectSuit(s) {
         if(!tempValue) return;
-        hand[currentSlot] = tempValue + s;
+        const newCard = tempValue + s;
+        if(hand.includes(newCard)) return; // Защита от дублей
+        hand[currentSlot] = newCard;
         tempValue = null;
-        if(currentSlot < 4) currentSlot++;
+        if(currentSlot < 6) currentSlot++;
         updateUI();
         calculate();
     }
@@ -114,38 +106,58 @@
     function updateUI() {
         hand.forEach((card, i) => {
             const el = document.getElementById('slot-' + i);
-            el.innerText = card || '?';
+            el.innerText = card ? card.replace('T', '10') : '?';
             el.className = 'card-slot' + (i === currentSlot ? ' active' : '') + (card ? ' filled' : '');
-            if(card) {
-                el.style.color = (card.includes('♥') || card.includes('♦')) ? '#ff3b30' : '#000';
-            }
+            if(card) el.style.color = (card.includes('♥') || card.includes('♦')) ? '#f6465d' : '#1e2329';
         });
-        document.getElementById('status-text').innerText = currentSlot < 2 ? "Ввод ваших карт" : "Ввод флопа";
     }
 
     function resetBoard() {
-        hand = [null, null, null, null, null];
+        hand = Array(7).fill(null);
         currentSlot = 0;
-        tempValue = null;
         updateUI();
         calculate();
     }
 
     function calculate() {
-        const filled = hand.filter(c => c).length;
-        if(filled < 2) {
+        const myCards = hand.slice(0, 2).filter(c => c);
+        const board = hand.slice(2).filter(c => c);
+        
+        if(myCards.length < 2) {
             document.getElementById('win-output').innerText = "0%";
+            document.getElementById('hand-output').innerText = "Ожидание карт...";
             return;
         }
+
+        // --- Улучшенная математика (Heuristic Engine) ---
+        let score = 0;
+        const allCards = [...myCards, ...board];
+        const valCounts = {};
+        allCards.forEach(c => { const v = c[0]; valCounts[v] = (valCounts[v] || 0) + 1; });
         
-        // Математическое ядро (имитация для прототипа)
-        // На 2 этапе сюда подключим реальный движок вероятностей
-        let baseChance = 100 / players;
-        if(hand[0] && hand[0].includes('A')) baseChance += 15;
-        if(hand[1] && hand[1].includes('A')) baseChance += 10;
+        const counts = Object.values(valCounts).sort((a, b) => b - a);
+        let handName = "Старшая карта";
+
+        // Логика определения комбинаций
+        if (counts[0] === 4) { score = 95; handName = "Каре"; }
+        else if (counts[0] === 3 && counts[1] >= 2) { score = 90; handName = "Фулл Хаус"; }
+        else if (counts[0] === 3) { score = 75; handName = "Сет (Тройка)"; }
+        else if (counts[1] === 2) { score = 65; handName = "Две пары"; }
+        else if (counts[0] === 2) { score = 45; handName = "Пара"; }
+        else {
+            // Если комбинаций нет, смотрим на силу карт
+            const highCard = values.indexOf(myCards[0][0]);
+            score = (15 - highCard) * 3;
+            handName = "Старшая " + myCards[0][0];
+        }
+
+        // Коррекция на количество игроков
+        let equity = score / (players * 0.6);
+        if (board.length === 0) equity = score / (players * 0.8); // Префлоп чуть жестче
         
-        const displayChance = Math.min(Math.max(baseChance, 5), 95).toFixed(1);
-        document.getElementById('win-output').innerText = displayChance + "%";
+        const final = Math.min(Math.max(equity, 2), 99.1).toFixed(1);
+        document.getElementById('win-output').innerText = final + "%";
+        document.getElementById('hand-output').innerText = handName;
     }
 
     Telegram.WebApp.ready();
