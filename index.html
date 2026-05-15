@@ -1,47 +1,155 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poker Equity Calc</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Poker Stats PRO</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; background: #1c1c1c; color: white; text-align: center; padding: 20px; }
-        .card-input { background: #333; border: 1px solid #555; color: white; padding: 10px; border-radius: 8px; width: 80%; margin: 10px 0; font-size: 18px; }
-        button { background: #248bde; border: none; color: white; padding: 15px 30px; border-radius: 8px; font-weight: bold; width: 85%; cursor: pointer; }
-        #result { margin-top: 20px; font-size: 24px; color: #4cd964; }
-        .hint { font-size: 12px; color: #888; margin-bottom: 20px; }
+        :root { --bg: #0f0f0f; --card-bg: #252525; --accent: #248bde; --text: #ffffff; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+               background: var(--bg); color: var(--text); margin: 0; padding: 15px; user-select: none; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .stats-box { background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
+        .win-pct { font-size: 32px; font-weight: bold; color: #4cd964; }
+        
+        .setup-row { display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .player-btn { background: #333; border: none; color: white; padding: 8px 15px; border-radius: 8px; min-width: 45px; }
+        .player-btn.active { background: var(--accent); }
+
+        .board-grid { display: grid; grid-template-columns: repeat(2, 1fr) 5px repeat(3, 1fr); gap: 8px; margin-bottom: 20px; align-items: center; }
+        .card-slot { background: var(--card-bg); border: 2px dashed #444; height: 70px; border-radius: 8px; 
+                     display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; }
+        .card-slot.active { border-color: var(--accent); background: #1a2530; }
+        .card-slot.filled { border-style: solid; border-color: #555; background: #fff; color: #000; }
+        .divider { width: 2px; height: 40px; background: #333; }
+
+        .selector { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: #1a1a1a; padding: 10px; border-radius: 12px; }
+        .sel-btn { background: #333; border: none; color: white; padding: 12px 5px; border-radius: 6px; font-size: 16px; }
+        .suit-s { color: #fff; } .suit-h { color: #ff3b30; } .suit-d { color: #34aadc; } .suit-c { color: #4cd964; }
+        
+        .controls { margin-top: 20px; display: flex; gap: 10px; }
+        .reset-btn { flex: 1; background: #ff3b30; border: none; color: white; padding: 12px; border-radius: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h2>Poker Stats</h2>
-    <p class="hint">Введи карты (н-р: As Ks для туза и короля пик)</p>
-    
-    <input type="text" id="hand1" class="card-input" placeholder="Твои карты (As Ks)">
-    <input type="text" id="hand2" class="card-input" placeholder="Карты оппонента (Qh Qd)">
-    
-    <button onclick="calculate()">Рассчитать шансы</button>
-    
-    <div id="result"></div>
 
-    <script>
-        // Упрощенная логика для примера (симуляция случайного исхода)
-        function calculate() {
-            const resDiv = document.getElementById('result');
-            resDiv.innerText = "Считаю...";
-            
-            // Имитация процесса симуляции (для TMA на JS лучше использовать готовые poker-lib, 
-            // но для базы сделаем наглядный расчет)
-            setTimeout(() => {
-                const win = (Math.random() * 100).toFixed(2);
-                const lose = (100 - win).toFixed(2);
-                resDiv.innerHTML = `Победа: ${win}%<br><span style="color:#ff3b30">Проигрыш: ${lose}%</span>`;
-            }, 800);
+<div class="header">
+    <span>Оппонентов:</span>
+    <div class="setup-row" id="player-selector"></div>
+</div>
+
+<div class="stats-box">
+    <div style="font-size: 12px; color: #888;">ШАНС НА ПОБЕДУ</div>
+    <div id="win-output" class="win-pct">0%</div>
+    <div id="status-text" style="font-size: 11px; color: #555; margin-top: 5px;">Введите свои карты</div>
+</div>
+
+<div class="board-grid">
+    <div class="card-slot active" id="slot-0" onclick="setSlot(0)">?</div>
+    <div class="card-slot" id="slot-1" onclick="setSlot(1)">?</div>
+    <div class="divider"></div>
+    <div class="card-slot" id="slot-2" onclick="setSlot(2)">?</div>
+    <div class="card-slot" id="slot-3" onclick="setSlot(3)">?</div>
+    <div class="card-slot" id="slot-4" onclick="setSlot(4)">?</div>
+</div>
+
+<div class="selector" id="val-selector"></div>
+<div class="selector" id="suit-selector" style="margin-top: 10px; grid-template-columns: repeat(4, 1fr);">
+    <button class="sel-btn suit-s" onclick="selectSuit('♠')">♠</button>
+    <button class="sel-btn suit-h" onclick="selectSuit('♥')">♥</button>
+    <button class="sel-btn suit-d" onclick="selectSuit('♦')">♦</button>
+    <button class="sel-btn suit-c" onclick="selectSuit('♣')">♣</button>
+</div>
+
+<div class="controls">
+    <button class="reset-btn" onclick="resetBoard()">СБРОС</button>
+</div>
+
+<script>
+    let players = 2;
+    let currentSlot = 0;
+    let hand = [null, null, null, null, null]; // 2 Hero + 3 Flop
+    const values = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+    let tempValue = null;
+
+    // Инициализация кнопок
+    const pSel = document.getElementById('player-selector');
+    for(let i=2; i<=8; i++) {
+        pSel.innerHTML += `<button class="player-btn ${i==2?'active':''}" onclick="setPlayers(${i}, this)">${i}</button>`;
+    }
+
+    const vSel = document.getElementById('val-selector');
+    values.forEach(v => {
+        vSel.innerHTML += `<button class="sel-btn" onclick="selectValue('${v}')">${v}</button>`;
+    });
+
+    function setPlayers(n, btn) {
+        players = n;
+        document.querySelectorAll('.player-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        calculate();
+    }
+
+    function setSlot(i) {
+        currentSlot = i;
+        updateUI();
+    }
+
+    function selectValue(v) {
+        tempValue = v;
+        document.getElementById('status-text').innerText = "Выберите масть для " + v;
+    }
+
+    function selectSuit(s) {
+        if(!tempValue) return;
+        hand[currentSlot] = tempValue + s;
+        tempValue = null;
+        if(currentSlot < 4) currentSlot++;
+        updateUI();
+        calculate();
+    }
+
+    function updateUI() {
+        hand.forEach((card, i) => {
+            const el = document.getElementById('slot-' + i);
+            el.innerText = card || '?';
+            el.className = 'card-slot' + (i === currentSlot ? ' active' : '') + (card ? ' filled' : '');
+            if(card) {
+                el.style.color = (card.includes('♥') || card.includes('♦')) ? '#ff3b30' : '#000';
+            }
+        });
+        document.getElementById('status-text').innerText = currentSlot < 2 ? "Ввод ваших карт" : "Ввод флопа";
+    }
+
+    function resetBoard() {
+        hand = [null, null, null, null, null];
+        currentSlot = 0;
+        tempValue = null;
+        updateUI();
+        calculate();
+    }
+
+    function calculate() {
+        const filled = hand.filter(c => c).length;
+        if(filled < 2) {
+            document.getElementById('win-output').innerText = "0%";
+            return;
         }
         
-        // Инициализация Telegram WebApp
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
-    </script>
+        // Математическое ядро (имитация для прототипа)
+        // На 2 этапе сюда подключим реальный движок вероятностей
+        let baseChance = 100 / players;
+        if(hand[0] && hand[0].includes('A')) baseChance += 15;
+        if(hand[1] && hand[1].includes('A')) baseChance += 10;
+        
+        const displayChance = Math.min(Math.max(baseChance, 5), 95).toFixed(1);
+        document.getElementById('win-output').innerText = displayChance + "%";
+    }
+
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand();
+</script>
 </body>
 </html>
