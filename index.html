@@ -3,56 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Poker Intelligence TMA</title>
+    <title>Poker Advisor TMA</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --bg: #0b0e11; --card-bg: #1e2329; --accent: #f0b90b; --text: #eaecef; --green: #02c076; --red: #f6465d; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; user-select: none; }
         
+        /* Статистика */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .stat-card { background: var(--card-bg); padding: 12px; border-radius: 10px; border: 1px solid #333; text-align: center; }
-        .val { font-size: 24px; font-weight: bold; display: block; }
-        .label { font-size: 10px; color: #848e9c; text-transform: uppercase; }
+        .stat-card { background: var(--card-bg); padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #333; }
+        .val { font-size: 26px; font-weight: bold; }
+        .label { font-size: 10px; color: #848e9c; }
 
-        .pot-inputs { display: flex; gap: 10px; margin-bottom: 15px; }
-        .input-group { flex: 1; background: var(--card-bg); padding: 8px; border-radius: 8px; border: 1px solid #474d57; }
-        .input-group input { background: none; border: none; color: white; width: 100%; font-size: 16px; outline: none; text-align: center; }
+        /* Безопасные счетчики без клавиатуры */
+        .stepper-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; background: var(--card-bg); padding: 10px; border-radius: 10px; }
+        .stepper-row { display: flex; justify-content: space-between; align-items: center; }
+        .step-label { font-size: 14px; width: 60px; }
+        .step-controls { display: flex; align-items: center; background: #0b0e11; border-radius: 6px; overflow: hidden; }
+        .step-btn { background: #2b3139; color: white; border: none; width: 40px; height: 35px; font-size: 18px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+        .step-btn:active { background: var(--accent); color: black; }
+        .step-val { width: 60px; text-align: center; font-size: 16px; font-weight: bold; }
 
+        /* Карты */
         .board { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
         .row { display: flex; gap: 5px; justify-content: center; }
-        .card { background: #2b3139; border: 1px solid #474d57; height: 55px; width: 40px; border-radius: 5px; 
-                display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; }
-        .card.active { border: 2px solid var(--accent); }
+        .card { background: #2b3139; border: 1px solid #474d57; height: 55px; width: 40px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; }
+        .card.active { border: 2px solid var(--accent); background: #363d48; }
         .card.filled { background: #fff; color: #000; border: none; }
 
-        .selector-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 10px; }
-        .sel-btn { background: #2b3139; border: none; color: #fff; padding: 10px 0; border-radius: 4px; }
+        /* Клавиатура карт */
+        .selector-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 8px; }
+        .sel-btn { background: #2b3139; border: none; color: #fff; padding: 10px 0; border-radius: 4px; font-weight: bold; }
+        .sel-btn:active { background: #474d57; }
         .suit-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-        .suit-btn { padding: 12px; font-size: 20px; border-radius: 8px; border: none; color: #fff; background: #2b3139; }
+        .suit-btn { padding: 12px; font-size: 20px; border-radius: 8px; border: none; background: #2b3139; }
 
-        .action-bar { background: var(--accent); color: black; padding: 15px; border-radius: 12px; text-align: center; font-weight: bold; margin-top: 10px; font-size: 18px; }
-        .reset-btn { background: #333; color: white; border: none; width: 100%; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
+        /* Кнопки действий */
+        .action-row { display: flex; gap: 8px; margin-top: 15px; }
+        .btn { flex: 1; padding: 14px; border-radius: 8px; border: none; font-weight: bold; font-size: 13px; color: white; }
+        .btn-reset { background: #333; }
+        .btn-advice { background: var(--accent); color: black; }
     </style>
 </head>
 <body>
 
 <div class="stats-grid">
-    <div class="stat-card"><span class="label">Equity</span><span id="equity-val" class="val">0%</span></div>
-    <div class="stat-card"><span class="label">Pot Odds</span><span id="odds-val" class="val">0%</span></div>
+    <div class="stat-card"><span class="label">Шанс победы</span><span id="equity-val" class="val" style="color: var(--green)">0%</span></div>
+    <div class="stat-card"><span class="label">Шанс банка</span><span id="odds-val" class="val" style="color: var(--accent)">0%</span></div>
 </div>
 
-<div class="pot-inputs">
-    <div class="input-group">
-        <div class="label">Банк</div>
-        <input type="number" id="pot-size" value="100" oninput="calculate()">
+<div class="stepper-container">
+    <div class="stepper-row">
+        <span class="step-label">Банк:</span>
+        <div class="step-controls">
+            <button class="step-btn" onclick="chg('pot', -50)">-</button>
+            <div class="step-val" id="pot-val">100</div>
+            <button class="step-btn" onclick="chg('pot', 50)">+</button>
+        </div>
     </div>
-    <div class="input-group">
-        <div class="label">Калл</div>
-        <input type="number" id="call-size" value="20" oninput="calculate()">
+    <div class="stepper-row">
+        <span class="step-label">Ставка:</span>
+        <div class="step-controls">
+            <button class="step-btn" onclick="chg('call', -10)">-</button>
+            <div class="step-val" id="call-val">20</div>
+            <button class="step-btn" onclick="chg('call', 10)">+</button>
+        </div>
     </div>
-    <div class="input-group">
-        <div class="label">Игроки</div>
-        <input type="number" id="active-players" value="2" oninput="calculate()">
+    <div class="stepper-row">
+        <span class="step-label">Игроки:</span>
+        <div class="step-controls">
+            <button class="step-btn" onclick="chg('pl', -1)">-</button>
+            <div class="step-val" id="pl-val">2</div>
+            <button class="step-btn" onclick="chg('pl', 1)">+</button>
+        </div>
     </div>
 </div>
 
@@ -72,27 +95,40 @@
 
 <div class="selector-grid" id="val-selector"></div>
 <div class="suit-grid">
-    <button class="suit-btn" onclick="selectSuit('♠')">♠</button>
+    <button class="suit-btn" style="color:#fff" onclick="selectSuit('♠')">♠</button>
     <button class="suit-btn" style="color:var(--red)" onclick="selectSuit('♥')">♥</button>
     <button class="suit-btn" style="color:#34aadc" onclick="selectSuit('♦')">♦</button>
     <button class="suit-btn" style="color:var(--green)" onclick="selectSuit('♣')">♣</button>
 </div>
 
-<div id="decision-box" class="action-bar">WAITING...</div>
-<button class="reset-btn" onclick="resetAll()">СБРОСИТЬ РАЗДАЧУ</button>
+<div class="action-row">
+    <button class="btn btn-reset" onclick="resetAll()">СБРОСИТЬ</button>
+    <button class="btn btn-advice" onclick="sendToBot()">СПРОСИТЬ ИИ</button>
+</div>
 
 <script>
     let currentSlot = 0;
     let hand = Array(7).fill(null);
-    const values = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+    let vals = { pot: 100, call: 20, pl: 2 };
     let tempValue = null;
+    const cards = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
 
-    // Отрисовка кнопок
     const vSel = document.getElementById('val-selector');
-    values.forEach(v => { vSel.innerHTML += `<button class="sel-btn" onclick="selectValue('${v}')">${v}</button>`; });
+    cards.forEach(v => { vSel.innerHTML += `<button class="sel-btn" onclick="selectValue('${v}')">${v}</button>`; });
+
+    // Управление цифрами без клавиатуры
+    function chg(type, amount) {
+        vals[type] += amount;
+        if(vals[type] < 0) vals[type] = 0;
+        if(type === 'pl' && vals[type] < 2) vals[type] = 2;
+        if(type === 'pl' && vals[type] > 8) vals[type] = 8;
+        document.getElementById(type + '-val').innerText = vals[type];
+        calculate();
+    }
 
     function setSlot(i) { currentSlot = i; updateUI(); }
     function selectValue(v) { tempValue = v; }
+    
     function selectSuit(s) {
         if(!tempValue) return;
         const card = tempValue + s;
@@ -107,64 +143,48 @@
         hand.forEach((c, i) => {
             const el = document.getElementById('slot-' + i);
             el.innerText = c ? c.replace('T','10') : '?';
-            el.className = 'card' + (i===currentSlot ? ' active' : '') + (c ? ' filled' : '');
+            el.className = 'card' + (i === currentSlot ? ' active' : '') + (c ? ' filled' : '');
             if(c) el.style.color = (c.includes('♥') || c.includes('♦')) ? '#f6465d' : '#1e2329';
         });
-    }
-
-    function calculate() {
-        const myCards = hand.slice(0, 2).filter(c => c);
-        const board = hand.slice(2).filter(c => c);
-        const pot = parseFloat(document.getElementById('pot-size').value) || 0;
-        const call = parseFloat(document.getElementById('call-size').value) || 0;
-        const players = parseInt(document.getElementById('active-players').value) || 2;
-
-        if(myCards.length < 2) return;
-
-        // 1. Считаем Equity (упрощенная модель с учетом аутов)
-        let equity = (100 / players);
-        const valCounts = {};
-        const suitCounts = {};
-        [...myCards, ...board].forEach(c => { 
-            valCounts[c[0]] = (valCounts[c[0]] || 0) + 1;
-            const s = c.slice(-1); suitCounts[s] = (suitCounts[s] || 0) + 1;
-        });
-
-        // Детекция дро (Outs)
-        let hasDraw = false;
-        Object.values(suitCounts).forEach(count => { if(count === 4) hasDraw = true; }); // Flush Draw
-
-        const counts = Object.values(valCounts).sort((a,b)=>b-a);
-        if(counts[0] >= 3) equity += 40;
-        else if(counts[0] === 2) equity += 15;
-        if(hasDraw) equity += 20;
-
-        equity = Math.min(Math.max(equity, 5), 95);
-        document.getElementById('equity-val').innerText = equity.toFixed(0) + "%";
-
-        // 2. Считаем Pot Odds
-        const potOdds = (call / (pot + call)) * 100;
-        document.getElementById('odds-val').innerText = potOdds.toFixed(0) + "%";
-
-        // 3. Математическое решение
-        const decisionBox = document.getElementById('decision-box');
-        if(equity > potOdds + 10) {
-            decisionBox.innerText = "RAISE / ALL-IN";
-            decisionBox.style.background = "#02c076";
-        } else if (equity > potOdds) {
-            decisionBox.innerText = "CALL / CHECK";
-            decisionBox.style.background = "#f0b90b";
-        } else {
-            decisionBox.innerText = "FOLD";
-            decisionBox.style.background = "#f6465d";
-        }
     }
 
     function resetAll() {
         hand = Array(7).fill(null);
         currentSlot = 0;
+        tempValue = null;
+        vals = { pot: 100, call: 20, pl: 2 };
+        document.getElementById('pot-val').innerText = vals.pot;
+        document.getElementById('call-val').innerText = vals.call;
+        document.getElementById('pl-val').innerText = vals.pl;
+        document.getElementById('equity-val').innerText = "0%";
+        document.getElementById('odds-val').innerText = "0%";
         updateUI();
-        calculate();
+    }
+
+    function calculate() {
+        const myCards = hand.slice(0, 2).filter(c => c);
+        if(myCards.length < 2) return;
+
+        // Эмуляция расчета (позже перенесем на сервер для ИИ)
+        let equity = (100 / vals.pl) * 1.2; 
+        const odds = (vals.call / (vals.pot + vals.call)) * 100;
+        
+        document.getElementById('equity-val').innerText = Math.min(equity, 99).toFixed(0) + "%";
+        document.getElementById('odds-val').innerText = odds.toFixed(0) + "%";
+    }
+
+    // Заготовка: Отправка данных обратно в чат бота
+    function sendToBot() {
+        const myCards = hand.slice(0, 2).filter(c => c).join(',');
+        const board = hand.slice(2).filter(c => c).join(',');
+        if(!myCards) {
+            alert("Сначала введи свои карты!");
+            return;
+        }
+        
+        // Отправляем JSON-строку в Telegram-бот
+        const data = JSON.stringify({ hero: myCards, board: board, pot: vals.pot, call: vals.call, players: vals.pl });
+        Telegram.WebApp.sendData(data); 
     }
 
     Telegram.WebApp.ready();
