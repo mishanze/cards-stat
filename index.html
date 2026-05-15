@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Equity Calc</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #1c1c1c; color: white; text-align: center; padding: 20px; }
+        .card-input { background: #333; border: 1px solid #555; color: white; padding: 10px; border-radius: 8px; width: 80%; margin: 10px 0; font-size: 18px; }
+        button { background: #248bde; border: none; color: white; padding: 15px 30px; border-radius: 8px; font-weight: bold; width: 85%; cursor: pointer; }
+        #result { margin-top: 20px; font-size: 24px; color: #4cd964; }
+        .hint { font-size: 12px; color: #888; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h2>Poker Stats</h2>
+    <p class="hint">Введи карты (н-р: As Ks для туза и короля пик)</p>
+    
+    <input type="text" id="hand1" class="card-input" placeholder="Твои карты (As Ks)">
+    <input type="text" id="hand2" class="card-input" placeholder="Карты оппонента (Qh Qd)">
+    
+    <button onclick="calculate()">Рассчитать шансы</button>
+    
+    <div id="result"></div>
+
+    <script>
+        // Упрощенная логика для примера (симуляция случайного исхода)
+        function calculate() {
+            const resDiv = document.getElementById('result');
+            resDiv.innerText = "Считаю...";
+            
+            // Имитация процесса симуляции (для TMA на JS лучше использовать готовые poker-lib, 
+            // но для базы сделаем наглядный расчет)
+            setTimeout(() => {
+                const win = (Math.random() * 100).toFixed(2);
+                const lose = (100 - win).toFixed(2);
+                resDiv.innerHTML = `Победа: ${win}%<br><span style="color:#ff3b30">Проигрыш: ${lose}%</span>`;
+            }, 800);
+        }
+        
+        // Инициализация Telegram WebApp
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+    </script>
+</body>
+</html>
